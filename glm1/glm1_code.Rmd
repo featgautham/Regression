@@ -1,0 +1,162 @@
+---
+title: "markdowndraft"
+author: "Gautham Meenakshisundaram"
+date: "10/31/2019"
+output: word_document
+---
+
+#1)
+
+```{r}
+earnings <- read.csv("earnings.csv",header=T)
+str(earnings)
+earnings$wage_status <- as.factor(earnings$wage_status)
+earnings$year <- as.factor(earnings$year)
+```
+
+#1a)
+
+```{r}
+table(earnings$wage_status, earnings$maritl)
+chisq.test(earnings$wage_status, earnings$maritl)
+
+table(earnings$wage_status, earnings$race)
+chisq.test(earnings$wage_status, earnings$race)
+
+table(earnings$wage_status, earnings$education)
+chisq.test(earnings$wage_status, earnings$education)
+
+table(earnings$wage_status, earnings$health)
+chisq.test(earnings$wage_status, earnings$health)
+
+table(earnings$wage_status, earnings$year)
+chisq.test(earnings$wage_status, earnings$year)
+```
+
+```{r}
+boxplot(earnings$age ~ earnings$wage_status, data = earnings, xlab = 'wage_status', ylab = 'age', main = 'Relationship between Age and Wage Status')
+```
+
+#1b)
+
+```{r}
+model_maritl <- glm(earnings$wage_status ~ earnings$maritl, family = binomial(), data = earnings)
+model_race <- glm(earnings$wage_status ~ earnings$race, family = binomial(), data = earnings)
+model_education <- glm(earnings$wage_status ~ earnings$education, family = binomial(), data = earnings)
+model_health <- glm(earnings$wage_status ~ earnings$health, family = binomial(), data = earnings)
+model_year <- glm(earnings$wage_status ~ earnings$year, family = binomial(), data = earnings)
+model_age <- glm(earnings$wage_status ~ earnings$age, family = binomial(), data = earnings)
+
+library(car)
+Anova(model_maritl)
+Anova(model_race)
+Anova(model_education)
+Anova(model_health)
+Anova(model_year)
+Anova(model_age)
+```
+
+```{r}
+AIC(model_maritl, model_race, model_education, model_health, model_year, model_age)
+```
+
+```{r}
+model1 <- glm(earnings$wage_status ~ earnings$maritl + earnings$race + earnings$education + earnings$health + earnings$year + earnings$age, family = binomial(), data = earnings)
+
+model2 <- glm(earnings$wage_status ~ earnings$maritl + earnings$education + earnings$health + earnings$year + earnings$age, family = binomial(), data = earnings)
+
+model3 <- glm(earnings$wage_status ~ earnings$maritl + earnings$education + earnings$health + earnings$age, family = binomial(), data = earnings)
+
+model4 <- glm(earnings$wage_status ~ earnings$maritl + earnings$education + earnings$age, family = binomial(), data = earnings)
+
+model5 <- glm(earnings$wage_status ~ earnings$maritl + earnings$education, family = binomial(), data = earnings)
+
+AIC(model1, model2, model3, model4, model5)
+summary(model1)
+```
+
+#1e)
+
+```{r}
+library(pROC)
+probs1 <- fitted(model1)
+roc(earnings$wage_status, probs1, plot = FALSE)
+probs2 <- fitted(model2)
+roc(earnings$wage_status, probs2, plot = FALSE)
+probs3 <- fitted(model3)
+roc(earnings$wage_status, probs3, plot = FALSE)
+probs4 <- fitted(model4)
+roc(earnings$wage_status, probs4, plot = FALSE)
+probs5 <- fitted(model5)
+roc(earnings$wage_status, probs5, plot = FALSE)
+```
+
+```{r}
+par(mar=c(5.1,4.1,6,2.1), xpd=FALSE)
+
+roc(earnings$wage_status, probs1, plot = TRUE, col = 'black' )
+roc(earnings$wage_status, probs5, plot = TRUE, add = TRUE, col = 'red')
+
+legend("topright", c("model1", "model5"), lty=1, col = c("black", "red"), inset=c(0,0))
+```
+
+#1f)
+
+```{r}
+library(gamlss)
+
+model1_gam <- gamlss(earnings$wage_status ~ earnings$maritl + earnings$race + earnings$education + earnings$health + earnings$year + pb(age), family = BI, data = earnings, trace = F)
+
+summary(model1_gam)
+```
+
+```{r}
+term.plot(model1_gam)
+```
+
+#2)
+
+```{r}
+dative <- read.csv("dative.csv",header=T)
+str(dative)
+```
+
+#2a)
+
+```{r}
+model_semantic <- glm(dative$realization_of_recipient ~ dative$semantic_class, family = binomial(), data = dative)
+model_recipient <- glm(dative$realization_of_recipient ~ dative$length_of_recipient, family = binomial(), data = dative)
+model_access <- glm(dative$realization_of_recipient ~ dative$access_of_rec, family = binomial(), data = dative)
+model_theme <- glm(dative$realization_of_recipient ~ dative$length_of_theme, family = binomial(), data = dative)
+
+library(car)
+Anova(model_semantic)
+Anova(model_recipient)
+Anova(model_access)
+Anova(model_theme)
+```
+
+```{r}
+AIC(model_semantic, model_recipient, model_access, model_theme)
+```
+
+```{r}
+model_a <- glm(dative$realization_of_recipient ~ dative$semantic_class + dative$length_of_recipient + dative$access_of_rec + dative$length_of_theme, family = binomial(), data = dative)
+
+model_b <- glm(dative$realization_of_recipient ~ dative$length_of_recipient + dative$access_of_rec + dative$length_of_theme, family = binomial(), data = dative)
+
+model_c <- glm(dative$realization_of_recipient ~ dative$length_of_recipient + dative$length_of_theme, family = binomial(), data = dative)
+
+AIC(model_a, model_b, model_c)
+```
+
+#2b) & 2c)
+
+```{r}
+library(lme4)
+
+model_b_cor <- glmer(dative$realization_of_recipient ~ dative$length_of_recipient + dative$access_of_rec + dative$length_of_theme + (1|dative$speaker), family = binomial(), data = dative)
+
+AIC(model_b, model_b_cor)
+```
+
